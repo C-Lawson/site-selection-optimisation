@@ -7,8 +7,14 @@
 
 ## Data
 uncertain_reefs <- read.csv(file.path("Outputs","Key source reef uncertainty", "o2_KSR_risky_and_opportunity_reefs.csv"), stringsAsFactors = FALSE)
-load('Data/keysourcereefs2023.RData')
-library(Matrix)
+if (!exists("MEAN_CONNECT") ||
+    !exists("reefsizes") ||
+    !exists("region") ||
+    !exists("ksr_alpha") ||
+    !exists("ksr_critic") ||
+    !exists("ksr_parallel_cores")) {
+  stop("Run Scripts/00_MASTER.R instead of this script.")
+}
 coral_covers <- read.csv(file.path("Outputs", "Use lookup tables" , "3.2_lower_and_upper_coral_cover_estimates.csv"), stringsAsFactors = FALSE)
 cover_min <- coral_covers$CoverLower_estimate # if cover is zero then algorithm says source reefs aren't connected to any sinks so make minimum possible value slightly higher than zero.
 cover_max <- coral_covers$CoverUpper_estimate # if cover is zero then algorithm says source reefs aren't connected to any sinks so make minimum possible value slightly higher than zero.
@@ -16,13 +22,10 @@ cover_mean <- coral_covers$Mean
 
 
 con <- MEAN_CONNECT
-# con <- con - diag(diag(con))  # This removes self-seeding. Using self
-# seeding in importance score calcs can on rare occasions mean the min score is
-# higher than the max score. Comment out for now, but re-introduce it if
-# it becomes a problem later. 
+con <- con - Matrix::Diagonal(x = diag(con))  # Remove self-seeding.
 reefsizes <- reefsizes
-alpha <- 1
-critic <- 20
+alpha <- ksr_alpha
+critic <- ksr_critic
 region <- region
 
 
@@ -45,9 +48,7 @@ out_local <- vector("list", nrow(uncertain_reefs))
 source('Scripts/Key source reef uncertainty/Functions/run_KS_algorithm_flip.R')
 
 # Set up parallel processing
-library(foreach)
-library(doSNOW)
-cl <- makeCluster(parallel::detectCores() - 1)
+cl <- makeCluster(ksr_parallel_cores)
 registerDoSNOW(cl)
 
 # Export necessary variables and function to workers
@@ -164,4 +165,3 @@ out_table_ksmin$Source_risk[valid_matches]        <- uncertain_reefs$Risk[match_
 
 ## Write to file
 write.csv(out_table_ksmin, file.path("Outputs", "Key source reef uncertainty", "o3_results_flip_KSmin.csv"), row.names = FALSE)
-

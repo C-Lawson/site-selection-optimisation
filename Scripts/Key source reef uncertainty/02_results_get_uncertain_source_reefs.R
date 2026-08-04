@@ -1,22 +1,15 @@
 ## Read in data
 score_table <- read.csv(file.path('Outputs','Key source reef uncertainty','o1_KSR_scores_range_all_reefs.csv'), stringsAsFactors = FALSE)
 
-library(ggplot2)
-
 # Set colours for plots
-col_risk <- "#CC6677"
-col_opp <- "#44AA99"
-col_default <- "#DDDDDD"
+if (!exists("col_risk")) stop("Run Scripts/00_MASTER.R instead of this script.")
+if (!exists("col_opp")) stop("Run Scripts/00_MASTER.R instead of this script.")
+if (!exists("col_default")) stop("Run Scripts/00_MASTER.R instead of this script.")
 
 # # Set parameters
-KSR_zone_threshold <- 5
-opp_number <- 100
-risk_number <- 100
-
-## Parameters (must be set before sourcing this script)
-if (!exists("KSR_zone_threshold")) stop("KSR_zone_threshold must be defined before sourcing this script")
-if (!exists("opp_number")) stop("opp_number must be defined before sourcing this script")
-if (!exists("risk_number")) stop("risk_number must be defined before sourcing this script")
+if (!exists("KSR_zone_threshold")) stop("Run Scripts/00_MASTER.R instead of this script.")
+if (!exists("opp_number")) stop("Run Scripts/00_MASTER.R instead of this script.")
+if (!exists("risk_number")) stop("Run Scripts/00_MASTER.R instead of this script.")
 
 ##  Get KSR Rankings for predicted (mean) and max and min.
 ## I.e. where a reef's position in list is based on its mean vs means of all

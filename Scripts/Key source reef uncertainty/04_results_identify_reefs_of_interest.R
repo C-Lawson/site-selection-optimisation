@@ -1,10 +1,6 @@
 # Aim: Get mean percentage and absolute KS diff accounted for by each flipped reef
 # in the source network (average of KSmin and KSmax flipping scenarios).
 
-suppressPackageStartupMessages({
-  library(dplyr)
-})
-
 # Input CSVs 
 ksmin_path <- file.path("Outputs", "Key source reef uncertainty", "o3_results_flip_KSmin.csv")
 ksmax_path <- file.path("Outputs", "Key source reef uncertainty", "o3_1_results_flip_KSmax.csv")

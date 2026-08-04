@@ -16,11 +16,14 @@
 # switch them. Also I'm going to square root transform the reef area so it
 # better approximates perimeter rather than area
 
-library(foreach)
-library(doSNOW)
-library(Matrix)
-
-load('Data/keysourcereefs2023.RData')
+if (!exists("MEAN_CONNECT") ||
+    !exists("reefsizes") ||
+    !exists("region") ||
+    !exists("ksr_alpha") ||
+    !exists("ksr_critic") ||
+    !exists("ksr_parallel_cores")) {
+  stop("Run Scripts/00_MASTER.R instead of this script.")
+}
 coral_covers <- read.csv('Outputs/Use lookup tables/3.2_lower_and_upper_coral_cover_estimates.csv')
 
 cover_min <- matrix(coral_covers$CoverLower_estimate, nrow=1) # if cover is zero then algorithm says source reefs aren't connected to any sinks so make minimum possible value slightly higher than zero.
@@ -30,13 +33,10 @@ scenario <- c("Min_Source_Score", "Max_Source_Score", "Mean_Source_Score")
 scores <- list()
 
 con <- MEAN_CONNECT  # Keep as sparse matrix for efficiency
-# con <- con - diag(diag(con))  # This removes self-seeding. Using self
-# seeding in importance score calcs can on rare occasions mean the min score is
-# higher than the max score. Comment out for now, but re-introduce it if
-# it becomes a problem later. 
+con <- con - Matrix::Diagonal(x = diag(con))  # Remove self-seeding.
 reefsizes <- reefsizes
-alpha <- 1
-critic <- 20
+alpha <- ksr_alpha
+critic <- ksr_critic
 region <- region
 
 
@@ -44,7 +44,7 @@ region <- region
 start_time <- Sys.time()
 
 # Set up parallel processing - use all available cores minus 1
-num_cores <- max(1, parallel::detectCores() - 1)
+num_cores <- ksr_parallel_cores
 cl <- makeCluster(min(num_cores, length(scenario)))  # Don't use more cores than scenarios
 registerDoSNOW(cl)
 

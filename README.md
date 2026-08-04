@@ -4,7 +4,17 @@ Code for assessing uncertainty in Key Source Reef (KSR) rankings on the Great Ba
 
 ## Dependencies
 
-R packages: `tidyverse`, `Matrix`, `foreach`, `doSNOW`, `ggplot2`, `ompr`, `ompr.roi`, `ROI.plugin.highs`
+R packages: `tidyverse`, `Matrix`, `foreach`, `doSNOW`, `ggplot2`, `ggimage`, `zoo`, `visreg`, `ompr`, `ompr.roi`, `ROI.plugin.highs`
+
+## Run the full workflow
+
+From the project folder, run:
+
+```r
+source("Scripts/00_MASTER.R")
+```
+
+Edit the input-file paths and parameters at the top of `Scripts/00_MASTER.R` before running. The master script runs every stage below in order and writes results to `Outputs/`.
 
 ## Run Order
 
