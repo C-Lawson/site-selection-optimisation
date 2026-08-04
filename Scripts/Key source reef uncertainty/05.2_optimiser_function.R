@@ -1,12 +1,6 @@
 # Aim: After Identifying the KSR networks that are most at risk and at opportunity of moving in or out of the KSR zone, and iteratively flipping each reef j in that KSR network i to determine the percent of KSR i uncertainty given by the possible coral cover range in reef j, we now want to select the 100 reefs (or whatever number) which if their coral cover is known will clarify the state of the most number of KSR networks. This is different to simply selecting the most influential reef j in the most at risk or most opportunity KSR i (this was done in script 05.1).
-library(tidyverse)
-library(Matrix)
-library(ompr)
-library(ompr.roi)
-library(ROI.plugin.highs)
-
 # Function to run the optimization
-run_ksr_optimization <- function(T_thr, K, MIN_CORAL_RANGE = 5, verbose = FALSE) {
+run_ksr_optimization <- function(T_thr, K, MIN_CORAL_RANGE, verbose) {
   # Purpose: Run KSR network optimization to select K reefs that maximize total value of resolved sources
   # Inputs:
   #   T_thr: Resolution threshold (0-100)

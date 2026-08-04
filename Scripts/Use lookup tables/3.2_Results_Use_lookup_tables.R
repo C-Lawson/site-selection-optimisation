@@ -1,29 +1,50 @@
-# Load libraries and functions
-library(tidyverse)
-library(ggimage)
-library(zoo)
-library(visreg)
-
+# Load functions
 source("Scripts/Use lookup tables/Functions/function_extract sequences.R") # This function is used to extract the sequences of recovery periods based on the disturbance regime.
 source("Scripts/Use lookup tables/Functions/07.1_FUNCTION_Results_get_uncertainty_using_trajectory_lookup_tables.R") # This function runs the lookup tables to get the coral cover estimates based on the disturbance regime and starting coral cover.
 
-# Load data.
-dat <- read.csv("Data/coral_cover.csv", header = F) # coral cover data
-dat.cyclone <- read.csv("Data/GBR_PAST_CYCLONES_2008-2024.csv", header = F) # cyclone data
-dat.dhw <- read.csv("Data/GBR_PAST_DHW_1985-2024.csv", header = F) # dhw data
+# Use input data loaded by the master script.
+if (!exists("coral_cover_data") ||
+    !exists("cyclone_data") ||
+    !exists("dhw_data") ||
+    !exists("lookup_cyclone_data") ||
+    !exists("lookup_dhw_data") ||
+    !exists("lookup_repeats") ||
+    !exists("lookup_last_year") ||
+    !exists("cyclone_first_year") ||
+    !exists("dhw_first_year")) {
+  stop("Run Scripts/00_MASTER.R instead of this script.")
+}
+dat <- coral_cover_data
+dat.cyclone <- cyclone_data
+dat.dhw <- dhw_data
 
-lookup_cyclone <- readRDS("Data/lookup_cyclone.RDS") #bigger than dhw because it contains "no disturbance" trajectories. 
-lookup_dhw <- readRDS("Data/lookup_dhw.RDS")
+cyclone_last_year <- cyclone_first_year + ncol(dat.cyclone) - 1
+dhw_last_year <- dhw_first_year + ncol(dat.dhw) - 1
+
+lookup_cyclone <- lookup_cyclone_data
+lookup_dhw <- lookup_dhw_data
 
 # Parameters
-repeats <- 100 # Number of times the simulation will be repeated to account for uncertainty in the results
-last.year <- 2024 # The most recent year of survey and disturbance data. I.e. if you want uncertainty in coral cover for 2025, this should be 2024; if a reef has been surveyed in last.year then just use that observed value, but if a reef was last surveyed prior to last.year then run it through the lookup tables to get current uncertainty in coral cover. 
+repeats <- lookup_repeats # Number of times the simulation will be repeated to account for uncertainty in the results
+last.year <- lookup_last_year # The final year for which coral-cover uncertainty is estimated.
+
+if (last.year > cyclone_last_year || last.year > dhw_last_year) {
+  stop(
+    "lookup_last_year is not covered by both disturbance files. ",
+    "Cyclone data cover ", cyclone_first_year, "-", cyclone_last_year,
+    "; DHW data cover ", dhw_first_year, "-", dhw_last_year, "."
+  )
+}
 
 # Store output summaries for all rows (including multiple rows per Reef.Number)
 all_summaries <- vector("list", length = nrow(dat))
 
 # Start for loop over all rows in dat
 for (i in seq_len(nrow(dat))) {
+  if (dat$Year[i] > last.year) {
+    stop("Survey year is later than lookup_last_year for Reef.Number ", dat$Reef.Number[i], ".")
+  }
+
   if (dat$Year[i] == last.year) {
     all_summaries[[i]] <- NA  # Store NA if last survey was last year (i.e. nothing to simulate and we just want to use the most recent observed value) 
     next
@@ -39,10 +60,20 @@ for (i in seq_len(nrow(dat))) {
   # Build disturbance regime to follow for this reef
   # Use Reef.Number to index cyclone/DHW matrices (not row index i, which may repeat for multiple sources per reef)
   reef_num <- this_dat$Reef.Number
+  regime_years <- seq.int(this_dat$Year + 1, last.year)
+
+  if (min(regime_years) < cyclone_first_year || min(regime_years) < dhw_first_year) {
+    stop(
+      "Disturbance data do not cover all years required for Reef.Number ", reef_num,
+      ". Cyclone data begin in ", cyclone_first_year,
+      " and DHW data begin in ", dhw_first_year, "."
+    )
+  }
+
   regime <- data.frame(
-    Year = (this_dat$Year + 1):last.year,
-    Cyclone = as.numeric(dat.cyclone[reef_num, (ncol(dat.cyclone) - (last.year - this_dat$Year) + 1):ncol(dat.cyclone)]),
-    DHW = as.numeric(dat.dhw[reef_num, (ncol(dat.dhw) - (last.year - this_dat$Year) + 1):ncol(dat.dhw)])
+    Year = regime_years,
+    Cyclone = as.numeric(dat.cyclone[reef_num, regime_years - cyclone_first_year + 1]),
+    DHW = as.numeric(dat.dhw[reef_num, regime_years - dhw_first_year + 1])
   )
   
   # Run lookup tables

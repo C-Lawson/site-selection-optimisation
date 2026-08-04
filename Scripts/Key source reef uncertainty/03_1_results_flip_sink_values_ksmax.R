@@ -1,8 +1,14 @@
 
 ## Load data
 uncertain_reefs <- read.csv(file.path("Outputs", "Key source reef uncertainty", "o2_KSR_risky_and_opportunity_reefs.csv"), stringsAsFactors = FALSE)
-load('Data/keysourcereefs2023.RData')
-library(Matrix)
+if (!exists("MEAN_CONNECT") ||
+    !exists("reefsizes") ||
+    !exists("region") ||
+    !exists("ksr_alpha") ||
+    !exists("ksr_critic") ||
+    !exists("ksr_parallel_cores")) {
+  stop("Run Scripts/00_MASTER.R instead of this script.")
+}
 coral_covers <- read.csv(file.path("Outputs", "Use lookup tables" , "3.2_lower_and_upper_coral_cover_estimates.csv"), stringsAsFactors = FALSE)
 cover_min <- coral_covers$CoverLower_estimate
 cover_max <- coral_covers$CoverUpper_estimate
@@ -11,10 +17,10 @@ cover_mean <- coral_covers$Mean
 
 ## KSR parameters (copied from o1)
 con <- MEAN_CONNECT
-# con <- con - diag(diag(con))  # optional self-seeding removal
+con <- con - Matrix::Diagonal(x = diag(con))  # Remove self-seeding.
 reefsizes <- reefsizes
-alpha <- 1
-critic <- 20
+alpha <- ksr_alpha
+critic <- ksr_critic
 region <- region
 
 cat('Starting computation (KSmax)...\n')
@@ -35,9 +41,7 @@ out_local <- vector("list", nrow(uncertain_reefs))
 source('Scripts/Key source reef uncertainty/Functions/run_KS_algorithm_flip_max.R')
 
 # Parallel setup
-library(foreach)
-library(doSNOW)
-cl <- makeCluster(parallel::detectCores() - 1)
+cl <- makeCluster(ksr_parallel_cores)
 registerDoSNOW(cl)
 
 clusterExport(cl, c('con','reefsizes','critic','col','cover_mean','cover_min','cover_max',

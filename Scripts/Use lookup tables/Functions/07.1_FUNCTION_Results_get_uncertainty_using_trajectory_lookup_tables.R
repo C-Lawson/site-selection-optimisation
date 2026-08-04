@@ -2,12 +2,14 @@
 
 # Note that coral cover values are given for the END of the associated year and at the end of each sampled trajectory.
 
-# Load SEM precision model coefficients
-load("Data/2.01_AIMS_Manta_SEM_Model.RData")
-load("Data/2.02_MMP_SEM_Model.RData")
-load("Data/2.03_AIMS transect_SEM_Model.RData")
-load("Data/2.04_GRC_SEM_Model.RData")
-load("Data/2.04.1_Reefmod_SEM_Model.RData")
+# Use SEM precision models loaded by the master script.
+if (!exists("model.manta") ||
+    !exists("model.mmp") ||
+    !exists("model.ltmp") ||
+    !exists("model.grc") ||
+    !exists("model.reefmod")) {
+  stop("Run Scripts/00_MASTER.R instead of this script.")
+}
 
 
 ##################################################################################################################################################################################################################################
@@ -180,4 +182,3 @@ final_summary <- results_df %>%
 return(list(results_df = results_df, summary = final_summary))
 
 }
-
