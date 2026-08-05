@@ -23,8 +23,8 @@ data_files <- list(
 # Parameters
 # ---------------------------------------------------------------------------
 # Number of uncertainty simulations for each reef.
-lookup_repeats <- 10
-# Final year for which coral-cover uncertainty is estimated.
+lookup_repeats <- 100
+# Final year for which you have both coral-cover and disturbance data (e.g. if you're surveying in 2026, this should be 2025).
 lookup_last_year <- 2025
 # First calendar year in the cyclone disturbance file.
 cyclone_first_year <- 2008
