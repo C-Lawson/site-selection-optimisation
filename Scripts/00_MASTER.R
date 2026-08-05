@@ -15,7 +15,8 @@ data_files <- list(
   transect_sem_model = "Data/2.03_AIMS transect_SEM_Model.RData",
   grc_sem_model = "Data/2.04_GRC_SEM_Model.RData",
   reefmod_sem_model = "Data/2.04.1_Reefmod_SEM_Model.RData",
-  ksr_data = "Data/keysourcereefs2023.RData"
+  ksr_data = "Data/keysourcereefs2023.RData",
+  reef_labels = "Data/GBR_labels_3806_corrected_Nov2025.csv"
 )
 
 # ---------------------------------------------------------------------------
@@ -39,9 +40,9 @@ ksr_parallel_cores <- max(1, parallel::detectCores() - 1)
 
 # Percentage of top-ranked reefs considered within the KSR zone.
 KSR_zone_threshold <- 5
-# Number of reefs reported as potential KSR opportunities.
+# Number of reefs to consider as potential KSR opportunities.
 opp_number <- 100
-# Number of reefs reported as at risk of leaving the KSR zone.
+# Number of reefs to consider as at risk of leaving the KSR zone.
 risk_number <- 100
 # Plot colour for reefs at risk of leaving the KSR zone.
 col_risk <- "#CC6677"
@@ -53,7 +54,7 @@ col_default <- "#DDDDDD"
 # Minimum percentage of a source's uncertainty that surveys must resolve.
 optimisation_threshold <- 80
 # Number of reefs selected for survey by the optimisation (this should match your survey capacity).
-optimisation_reef_count <- 100
+optimisation_reef_count <- 200
 # Minimum coral-cover range required for a reef to be eligible for selection.
 optimisation_min_coral_range <- 5
 # Whether to display detailed optimisation-solver messages.
@@ -105,6 +106,10 @@ load(data_files$grc_sem_model)
 load(data_files$reefmod_sem_model)
 load(data_files$ksr_data)
 
+# Labels for making reef numbers human-readable in the outputs
+reef_labels_data <- read.csv(data_files$reef_labels) %>%
+  select(Reef_ID, Lat, Long, Label.ID, OldReefName, AIMS_Sector)
+
 # ---------------------------------------------------------------------------
 # Prepare output folders
 # ---------------------------------------------------------------------------
@@ -147,18 +152,16 @@ optimisation_result <- run_ksr_optimization(
   T_thr = optimisation_threshold,
   K = optimisation_reef_count,
   MIN_CORAL_RANGE = optimisation_min_coral_range,
-  verbose = optimisation_verbose
+  verbose = optimisation_verbose,
+  labels_data = reef_labels_data
 )
 
-write.csv(
-  optimisation_result$selected_reefs,
-  file.path(
-    "Outputs",
-    "Key source reef uncertainty",
-    paste0("o5.2_ILP_optimisation_selected_reefs_K", optimisation_reef_count, ".csv")
-  ),
-  row.names = FALSE
+selected_reefs_path <- file.path(
+  "Outputs",
+  "Key source reef uncertainty",
+  paste0("o5.2_ILP_optimisation_selected_reefs_K", optimisation_reef_count, ".csv")
 )
+write.csv(optimisation_result$selected_reefs, selected_reefs_path, row.names = FALSE)
 
 write.csv(
   optimisation_result$resolved_sources,
@@ -170,4 +173,5 @@ write.csv(
   row.names = FALSE
 )
 
+cat("Selected reefs to survey written to:", selected_reefs_path, "\n")
 cat("Workflow complete.\n")

@@ -57,41 +57,6 @@ KSRzone <- as.numeric(quantile(seq_len(n_total), probs = KSR_zone_threshold/100,
 xA <- KSRzone
 xB <- KSRzone
 
-# Save a main scatter plot
-p_base <- ggplot(score_table, aes(x = MeanRank, y = Net)) +
-  geom_point(aes(fill = "All reefs"), shape = 21, color = "black", stroke = 0.3, size = 2, alpha = 0.7) +
-  geom_vline(aes(xintercept = KSRzone, color = "KSR Zone Threshold", linetype = "KSR Zone Threshold"), linewidth = 0.6) +
-  geom_hline(yintercept = 0, color = "black", linewidth = 0.4) +
-  scale_x_reverse() +
-  scale_color_manual(values = c(
-    "All reefs" = col_default,
-    "KSR Zone Threshold" = "red",
-    "Top Opportunity reefs" = col_opp,
-    "Top Risk reefs" = col_risk
-  )) +
-  scale_fill_manual(values = c(
-    "All reefs" = col_default,
-    "Top Opportunity reefs" = col_opp,
-    "Top Risk reefs" = col_risk
-  )) +
-  scale_linetype_manual(values = c("KSR Zone Threshold" = "dashed")) +
-  labs(
-    x = expression("Predicted KS Rank (" * bar(R) * ")"),
-    y = "Net Movement with Uncertainty",
-    color = NULL,
-    fill = NULL,
-    linetype = NULL
-  ) +
-  theme_bw()
-
-ggsave(
-  filename = file.path('Outputs','Key source reef uncertainty','plot_net_vs_predicted_KSR.png'),
-  plot = p_base,
-  width = 1600 / 150,
-  height = 1200 / 150,
-  dpi = 150
-)
-
 ## ---------- GET HOW LIKELY EACH REEF IS TO CROSS THE KSR LINE ----------
 idx_A <- score_table$MeanRank > xA
 idx_B <- score_table$MeanRank < xB
@@ -116,51 +81,6 @@ if (all(is.na(score_table$Opportunity))) {
     top_Opp <- non_na_idx
   }
 }
-
-## Save a plot with selected opportunity reefs overlayed (tagged)
-p_opp <- ggplot(score_table, aes(x = MeanRank, y = Net)) +
-  geom_point(aes(fill = "All reefs"), shape = 21, color = "black", stroke = 0.3, size = 2, alpha = 0.7) +
-  geom_vline(aes(xintercept = KSRzone, color = "KSR Zone Threshold", linetype = "KSR Zone Threshold"), linewidth = 0.6) +
-  geom_hline(yintercept = 0, color = "black", linewidth = 0.4) +
-  geom_point(
-    data = score_table[top_Opp, , drop = FALSE],
-    aes(fill = "Top Opportunity reefs"),
-    shape = 21,
-    color = "black",
-    stroke = 0.3,
-    size = 2,
-    alpha = 0.7
-  ) +
-  scale_x_reverse() +
-  scale_color_manual(values = c(
-    "All reefs" = col_default,
-    "KSR Zone Threshold" = "red",
-    "Top Opportunity reefs" = col_opp,
-    "Top Risk reefs" = col_risk
-  )) +
-  scale_fill_manual(values = c(
-    "Top Opportunity reefs" = col_opp,
-    "Top Risk reefs" = col_risk,
-    "All reefs" = col_default
-  )) +
-  scale_linetype_manual(values = c("KSR Zone Threshold" = "dashed")) +
-  labs(
-    x = expression("Predicted KSR Rank (" * bar(R) * ")"),
-    y = "Net Movement with Uncertainty",
-    color = NULL,
-    fill = NULL,
-    linetype = NULL
-  ) +
-  theme_bw() +
-  theme(legend.position = "none")
-
-ggsave(
-  filename = file.path('Outputs','Key source reef uncertainty','plot_net_vs_predicted_KSR_with_selection.png'),
-  plot = p_opp,
-  width = 1600 / 150,
-  height = 1200 / 150,
-  dpi = 150
-)
 
 ## Same but for risk of dropping out of the KSR zone
 score_table$Risk <- rep(NA_real_, nrow(score_table))  # Pre-fill with NA

@@ -91,5 +91,3 @@ n_distinct(out$Flipped_Reef)
 # Write CSV with no quotes and NaN for missing numeric values; no row names
 out_path <- file.path("Outputs", "Key source reef uncertainty", "o4_reefs_of_interest_summaries.csv")
 write.csv(out, out_path, row.names = FALSE, quote = FALSE, na = "NaN")
-
-cat("Wrote:", out_path, "\n")

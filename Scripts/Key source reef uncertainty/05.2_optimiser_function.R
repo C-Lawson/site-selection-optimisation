@@ -1,12 +1,13 @@
 # Aim: After Identifying the KSR networks that are most at risk and at opportunity of moving in or out of the KSR zone, and iteratively flipping each reef j in that KSR network i to determine the percent of KSR i uncertainty given by the possible coral cover range in reef j, we now want to select the 100 reefs (or whatever number) which if their coral cover is known will clarify the state of the most number of KSR networks. This is different to simply selecting the most influential reef j in the most at risk or most opportunity KSR i (this was done in script 05.1).
 # Function to run the optimization
-run_ksr_optimization <- function(T_thr, K, MIN_CORAL_RANGE, verbose) {
+run_ksr_optimization <- function(T_thr, K, MIN_CORAL_RANGE, verbose, labels_data) {
   # Purpose: Run KSR network optimization to select K reefs that maximize total value of resolved sources
   # Inputs:
   #   T_thr: Resolution threshold (0-100)
   #   K: Number of reefs to survey
   #   MIN_CORAL_RANGE: Minimum coral cover range to consider a reef valid for selection
   #   verbose: Whether to print solver output
+  #   labels_data: data frame of reef labels (Reef_ID, Lat, Long, Label.ID, OldReefName, AIMS_Sector) for making reef numbers human-readable in the outputs
   # Returns: List with elements:
   #   - selected_reefs: data frame of selected reef IDs
   #   - resolved_sources: data frame of resolved source reef IDs
@@ -17,6 +18,7 @@ run_ksr_optimization <- function(T_thr, K, MIN_CORAL_RANGE, verbose) {
   # Load data (these must exist in the working directory outputs)
   dat <- read.csv("Outputs/Key source reef uncertainty/o4_reefs_of_interest_summaries.csv")
   dat.coral <- read.csv('Outputs/Use lookup tables/3.2_lower_and_upper_coral_cover_estimates.csv')
+
 
   ## Add a column to dat called 'coral range' that takes value from dat.coral$Range, matching dat$Flipped_Reef to dat.coral$Reef.Number
   dat <- dat %>%
@@ -88,22 +90,18 @@ run_ksr_optimization <- function(T_thr, K, MIN_CORAL_RANGE, verbose) {
 
   result <- solve_model(model, with_ROI(solver = "highs", verbose = verbose))
 
-  # Labels for making reef numbers human-readable in the outputs
-  dat.labels <- read.csv("Data/GBR_labels_3806_corrected_Nov2025.csv") %>%
-    select(Reef_ID, Lat, Long, Label.ID, OldReefName)
-
   # 3) Read solution
   selected_reefs <- get_solution(result, x[j]) %>%
     filter(value > 0.5) %>%
     transmute(reef_col = j,
               Flipped_Reef = reef_ids[j]) %>%
-    left_join(dat.labels, by = c("Flipped_Reef" = "Reef_ID"))
+    left_join(labels_data, by = c("Flipped_Reef" = "Reef_ID"))
 
   resolved_sources <- get_solution(result, y[i]) %>%
     filter(value > 0.5) %>%
     transmute(src_row = i,
               SourceReefID = source_ids[i]) %>%
-    left_join(dat.labels, by = c("SourceReefID" = "Reef_ID"))
+    left_join(labels_data, by = c("SourceReefID" = "Reef_ID"))
 
   # Extract total value
     total_val <- ompr::objective_value(result)
@@ -127,8 +125,10 @@ run_ksr_optimization <- function(T_thr, K, MIN_CORAL_RANGE, verbose) {
 # T_thr <- 80   # resolution threshold
 # K <- 100      # number of reefs to survey
 # MIN_CORAL_RANGE <- 5  # Minimum coral cover range to consider a reef valid for selection
+# labels_data <- read.csv("Data/GBR_labels_3806_corrected_Nov2025.csv") %>%
+#   select(Reef_ID, Lat, Long, Label.ID, OldReefName, AIMS_Sector)
 # 
-# result <- run_ksr_optimization(T_thr = T_thr, K = K, MIN_CORAL_RANGE = MIN_CORAL_RANGE, verbose = TRUE)
+# result <- run_ksr_optimization(T_thr = T_thr, K = K, MIN_CORAL_RANGE = MIN_CORAL_RANGE, verbose = TRUE, labels_data = labels_data)
 # 
 # cat("Selected reefs:", nrow(result$selected_reefs), "\n",
 #     "Resolved sources:", result$n_resolved, "\n",
