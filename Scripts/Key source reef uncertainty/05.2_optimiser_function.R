@@ -88,16 +88,22 @@ run_ksr_optimization <- function(T_thr, K, MIN_CORAL_RANGE, verbose) {
 
   result <- solve_model(model, with_ROI(solver = "highs", verbose = verbose))
 
+  # Labels for making reef numbers human-readable in the outputs
+  dat.labels <- read.csv("Data/GBR_labels_3806_corrected_Nov2025.csv") %>%
+    select(Reef_ID, Lat, Long, Label.ID, OldReefName)
+
   # 3) Read solution
   selected_reefs <- get_solution(result, x[j]) %>%
     filter(value > 0.5) %>%
     transmute(reef_col = j,
-              Flipped_Reef = reef_ids[j])
+              Flipped_Reef = reef_ids[j]) %>%
+    left_join(dat.labels, by = c("Flipped_Reef" = "Reef_ID"))
 
   resolved_sources <- get_solution(result, y[i]) %>%
     filter(value > 0.5) %>%
     transmute(src_row = i,
-              SourceReefID = source_ids[i])
+              SourceReefID = source_ids[i]) %>%
+    left_join(dat.labels, by = c("SourceReefID" = "Reef_ID"))
 
   # Extract total value
     total_val <- ompr::objective_value(result)
